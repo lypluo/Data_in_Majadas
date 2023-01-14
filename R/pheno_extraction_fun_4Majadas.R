@@ -46,11 +46,11 @@ prod.ad1<-function(deri)
 }
 
 SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
-  data_ts<-df.run
-  sitename<-"NT"
-  VI_name<-"GCC"
-  do_norm<-FALSE
-  year_num<-2015
+  # data_ts<-df.run
+  # sitename<-"NT"
+  # VI_name<-"GCC"
+  # do_norm<-FALSE
+  # year_num<-2018
 
   #
   proc.ts<-data_ts %>%
@@ -130,7 +130,7 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
   #------------------------------------
   #start to extract important phenological dates:timing, slope, amplitude
   #------------------------------------
-  Pheno_metrics<-data.frame(matrix(ncol=1,nrow=22))
+  Pheno_metrics<-data.frame(matrix(ncol=1,nrow=32))
   for(a in 1:1){
     ###determine two UDs,RDs,maxs,mins from ts_sm
     deriValue<-diff(ts_sm)
@@ -155,10 +155,10 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
       intermin<-min(Ppredict[c(122+15):181])      #define between Jan-15 to end of Feb
       interminD<-match(intermin,Ppredict)
     }
-    if(year==2017){
-      intermin<-min(Ppredict[DateT1[(DateT1>=153-extendD)&(DateT1<=181)]]) #define between Feb to Mar
-      interminD<-match(intermin,Ppredict)
-    }
+    # if(year_num==2017){
+    #   intermin<-min(ts_sm[DateT1[(DateT1>=153-extendD)&(DateT1<=181)]]) #define between Feb to Mar
+    #   interminD<-match(intermin,ts_sm)
+    # }
 
     abline(v=interminD,col='blue',lty=2)
 
@@ -210,105 +210,132 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     ifelse(exists('trs_eos50_1')==FALSE,trs_eos50_1<-NA,trs_eos50_1<-trs_eos50_1)
     ifelse(exists('trs_sos50_2')==FALSE,trs_sos50_2<-NA,trs_sos50_2<-trs_sos50_2)
     abline(v=c(trs_sos50_1,trs_eos50_1,trs_sos50_2,trs_eos50_2),col='blue')
-    ##-->working here-->need to work later::
-
-
     #add four more threshold-based PTDs
-    trs_25_sos_value<-mn_sos+0.25*ampl_sos
-    trs_75_sos_value<-mn_sos+0.75*ampl_sos
-    trs_25_eos_value<-mn_eos+0.25*ampl_eos
-    trs_75_eos_value<-mn_eos+0.75*ampl_eos
+    trs_sos25_value<-mn1+0.25*ampl1 #green-up period
+    trs_sos75_value<-mn1+0.75*ampl1
+    trs_eos25_value<-mn2+0.25*ampl2 #dry-down period
+    trs_eos75_value<-mn2+0.75*ampl2
 
-    trs_sos25<-15+which.min(as.numeric(abs(trs_25_sos_value - ts_sm[15:pop])))
-    trs_sos75<-15+which.min(as.numeric(abs(trs_75_sos_value - ts_sm[15:pop])))
-    trs_eos75<-pop+which.min(as.numeric(abs(trs_75_eos_value - ts_sm[pop:length(ts_sm)])))-1
-    trs_eos25<-pop+which.min(as.numeric(abs(trs_25_eos_value - ts_sm[pop:length(ts_sm)])))-1
+    trs_sos25_1<-15+which.min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))
+    trs_sos75_1<-15+which.min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))
+    trs_eos75_1<-pop1+which.min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))
+    trs_eos25_1<-pop1+which.min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))
+
+    trs_sos25_2<-interminD+which.min(as.numeric(abs(trs_eos25_value - ts_sm[interminD:pop2])))
+    trs_sos75_2<-interminD+which.min(as.numeric(abs(trs_eos75_value - ts_sm[interminD:pop2])))
+    trs_eos75_2<-pop2+which.min(as.numeric(abs(trs_eos75_value - ts_sm[pop2:length(ts_sm)])))-1
+    trs_eos25_2<-pop2+which.min(as.numeric(abs(trs_eos25_value - ts_sm[pop2:length(ts_sm)])))-1
 
     #set a crition to filter the pseduo trs25,trs75
     #if the minimum residual between trs_critrion and trs_sm bigger than
     #0.1*ampl, then set the trs50<-NA
-    abline(h=c(trs_25_sos_value,trs_75_sos_value,
-               trs_75_eos_value,trs_25_eos_value),col='blue',lty=2)
-    if(min(as.numeric(abs(trs_25_sos_value - ts_sm[15:pop])))>c(ampl_sos*0.05)){
-      trs_sos25<-NA
+    abline(h=c(trs_sos25_value,trs_sos75_value),col='steelblue2',lty=2) #green-up
+    abline(h=c(trs_eos75_value,trs_eos25_value),col='skyblue',lty=2) #dry-down
+    if(min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))>c(ampl1*0.05)){
+      trs_sos25_1<-NA
     }
-    if(min(as.numeric(abs(trs_75_sos_value - ts_sm[15:pop])))>c(ampl_sos*0.05)){
-      trs_sos75<-NA
+    if(min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))>c(ampl1*0.05)){
+      trs_sos75_1<-NA
     }
-    if(min(as.numeric(abs(trs_75_eos_value - ts_sm[pop:length(ts_sm)])))>c(ampl_eos*0.1)){
-      trs_eos75<-NA
+    if(min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))>c(ampl2*0.1)){
+      trs_eos75_1<-NA
     }
-    if(min(as.numeric(abs(trs_25_eos_value - ts_sm[pop:length(ts_sm)])))>c(ampl_eos*0.1)){
-      trs_eos25<-NA
+    if(min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))>c(ampl2*0.1)){
+      trs_eos25_1<-NA
     }
-    abline(v=c(trs_sos25,trs_sos75,trs_eos75,trs_eos25),col='gold')
+
+
+    if(min(as.numeric(abs(trs_eos25_value - ts_sm[interminD:pop2])))>c(ampl2*0.05)){
+      trs_sos25_2<-NA
+    }
+    if(min(as.numeric(abs(trs_eos75_value - ts_sm[interminD:pop2])))>c(ampl2*0.05)){
+      trs_sos75_2<-NA
+    }
+    if(min(as.numeric(abs(trs_eos75_value - ts_sm[pop2:length(ts_sm)])))>c(ampl2*0.1)){
+      trs_eos75_2<-NA
+    }
+    if(min(as.numeric(abs(trs_eos25_value - ts_sm[pop2:length(ts_sm)])))>c(ampl2*0.1)){
+      trs_eos25_2<-NA
+    }
+    abline(v=c(trs_sos25_1,trs_sos75_1,trs_eos75_1,trs_eos25_1,
+               trs_sos25_2,trs_sos75_2,trs_eos75_2,trs_eos25_2),col='gold')
 
     #add EOS 90-->add in 2022-Feb,20
-    trs_90_eos_value<-mn_eos+0.9*ampl_eos
-    trs_eos90<-pop+which.min(as.numeric(abs(trs_90_eos_value - ts_sm[pop:length(ts_sm)])))-1
-    if(min(as.numeric(abs(trs_90_eos_value - ts_sm[pop:length(ts_sm)])))>c(ampl_eos*0.1)){
-      trs_eos90<-NA
+    trs_sos90_value<-mn1+0.9*ampl1
+    trs_eos90_value<-mn2+0.9*ampl2
+    trs_eos90_1<-pop1+which.min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))-1
+    trs_eos90_2<-pop2+which.min(as.numeric(abs(trs_eos90_value - ts_sm[pop2:length(ts_sm)])))-1
+
+    if(min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))>c(ampl1*0.1)){
+      trs_eos90_1<-NA
     }
-    abline(v=trs_eos90,col='orange')
+    if(min(as.numeric(abs(trs_eos90_value - ts_sm[pop2:length(ts_sm)])))>c(ampl2*0.1)){
+      trs_eos90_2<-NA
+    }
+    abline(v=c(trs_eos90_1,trs_eos90_2),col='orange')
 
+    ##Determine UDs and RDs(in two small cycles)
+    #!!!only focus on the green-up in the first cycle and dry-down in the second cycle
 
-    ##Determine UDs and RDs
+    #----for green-up period(first cycle)----
     #linear regression between [sos50-15,sos50+15], take the regression slope as the prr
     #prr-->refer Filippa et al., 2016
     library(trend)
-    if(is.na(trs_sos50)){
+    if(is.na(trs_sos50_1)){
       prr<-NA;prrD<-NA;b_prr<-NA
       UD<-NA;SD<-NA
       Gslope<-NA
     }
-    if(!is.na(trs_sos50)){
-      data_sub<-ts_sm[c(trs_sos50-20):c(trs_sos50+20)]
+
+    if(!is.na(trs_sos50_1)){
+      data_sub<-ts_sm[c(trs_sos50_1-20):c(trs_sos50_1+20)]
       temp_slope<-sens.slope(as.numeric(data_sub),conf.level = 0.95)
       prr<-as.numeric(temp_slope$estimates)
-      prrD<-trs_sos50
+      prrD<-trs_sos50_1
       b_prr<-as.numeric(ts_sm[prrD])-prr*prrD
       #
-      UD<-floor((mn_sos - b_prr)/prr)
-      SD<-ceiling((max_line - b_prr)/prr)
+      UD<-floor((mn1 - b_prr)/prr)
+      SD<-ceiling((max_line1 - b_prr)/prr)
       if(UD<0){UD<-NA;}
-      if(SD>pop){SD<-NA}
+      if(SD>pop1){SD<-NA}
       abline(v=c(UD,SD),col='green')
       abline(v=prrD,col='red')
       #add additional slope
-      data_sub<-ts_sm[c(trs_sos50-20):pop]
+      data_sub<-ts_sm[c(trs_sos50_1-20):pop1]
       temp_slope<-sens.slope(as.numeric(data_sub),conf.level = 0.95)
       Gslope<-as.numeric(temp_slope$estimates)
     }
 
+    #----for dry-down period(second cycle)----
     #psr
     # linear regression between [eos50-15,eos50+15], take the regression slope as the prr
-    if(is.na(trs_eos50)){
+    if(is.na(trs_eos50_2)){
       psr<-NA;psrD<-NA;b_psr<-NA
       RD<-NA;DD<-NA
       Dslope<-NA
     }
-    if(!is.na(trs_eos50)){
-      if(c(trs_eos50+20)>365){
+    if(!is.na(trs_eos50_2)){
+      if(c(trs_eos50_2+20)>365){
         psrD<-trs_eos50
         psr<-NA;b_psr<-NA
         RD<-NA;DD<-NA
         Dslope<-NA
       }
-      if(c(trs_eos50+20)<=365){
-        data_sub<-ts_sm[c(trs_eos50-20):c(trs_eos50+20)]
+      if(c(trs_eos50_2+20)<=365){
+        data_sub<-ts_sm[c(trs_eos50_2-20):c(trs_eos50_2+20)]
         temp_slope<-sens.slope(as.numeric(data_sub),conf.level = 0.95)
         psr<-as.numeric(temp_slope$estimates)
-        psrD<-trs_eos50
+        psrD<-trs_eos50_2
         b_psr<-as.numeric(ts_sm[psrD])-psr*psrD
         #
-        RD <- floor((mn_eos - b_psr)/psr)
-        DD<-ceiling((max_line-b_psr)/psr)
+        RD <- floor((mn2 - b_psr)/psr)
+        DD<-ceiling((max_line2-b_psr)/psr)
         abline(v=c(RD,DD),col='green')
         abline(v=psrD,col='red')
         #add additional slope
         # if(RD<=length(ts_sm)){
           ##add additional slope
-          data_sub<-ts_sm[pop:c(trs_eos50+20)]
+          data_sub<-ts_sm[pop2:c(trs_eos50_2+20)]
           temp_slope<-sens.slope(as.numeric(data_sub),conf.level = 0.95)
           Dslope<-as.numeric(temp_slope$estimates)
         # }
@@ -321,37 +348,44 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
 
     }
     #put the phenometrics together
-    Pheno_metrics[,a]<- c(UD,prrD,SD,pop,DD,psrD,RD,
-                          trs_sos25,trs_sos50,trs_sos75,trs_eos90,trs_eos75,trs_eos50,trs_eos25,
-                          max_line,baseline,ampl_sos,ampl_eos,prr,psr,Gslope,Dslope)
+    Pheno_metrics[,a]<- c(UD,prrD,SD,pop1,interminD,pop2,DD,psrD,RD,
+                          trs_sos25_1,trs_sos50_1,trs_sos75_1,trs_eos90_1,trs_eos75_1,trs_eos50_1,trs_eos25_1,
+                          trs_sos25_2,trs_sos50_2,trs_sos75_2,trs_eos90_2,trs_eos75_2,trs_eos50_2,trs_eos25_2,
+                          max_line1,max_line2,baseline,ampl1,ampl2,
+                          prr,psr,Gslope,Dslope)
   }
   Pheno_metrics<-as.data.frame(t(Pheno_metrics))
-  names(Pheno_metrics)<-c("UD","prrD","SD","pop","DD","psrD","RD",
-                              'trs_sos25','trs_sos50','trs_sos75',"trs_eos90",'trs_eos75','trs_eos50','trs_eos25',
-                              "maxline","baseline",'ampl_sos','ampl_eos',"prr","psr","Gslope","Dslope")
-  row.names(Pheno_metrics)<-site.name
+  names(Pheno_metrics)<-c("UD","prrD","SD","pop1","interminD","pop2","DD","psrD","RD",
+                          'trs_sos25_1','trs_sos50_1','trs_sos75_1',"trs_eos90_1",'trs_eos75_1','trs_eos50_1','trs_eos25_1',
+                          'trs_sos25_2','trs_sos50_2','trs_sos75_2',"trs_eos90_2",'trs_eos75_2','trs_eos50_2','trs_eos25_2',
+                          "maxline1","maxline2","baseline",'ampl1','ampl2',
+                          "prr","psr","Gslope","Dslope")
+  row.names(Pheno_metrics)<-sitename
   #
   #some adjust: in case the time series is not start from doy=1:
   min.doy<-min(proc.VIs$doy,na.rm=T)
-  #some adjust: in case the time series is not start from doy=1:
-  Pheno_metrics[1:14]<-Pheno_metrics[1:14]+min.doy-1
+  Pheno_metrics[1:23]<-Pheno_metrics[1:23]+min.doy-1
   #----------------------
   # metrics summary
   #---------------------------
-  metrics<- c(UD,prrD,SD,pop,DD,psrD,RD)
-  metrics_part1<-c(UD,pop)
+  metrics<- c(UD,prrD,SD,pop1,interminD,pop2,DD,psrD,RD)
+  metrics_part1<-c(UD,pop1,interminD,pop2)
   metrics_part2<-c(prrD,psrD)
   metrics_part3<-c(SD,DD)
-  metrics_trs<-c(trs_sos25,trs_sos50,trs_sos75,trs_eos90,trs_eos75,trs_eos50,trs_eos25)
-  names(metrics) <- c("UD","prrD","SD","pop","DD","psrD","RD")
-  names(metrics_part1)<-c("UD","pop")
+  metrics_trs<-c(trs_sos25_1,trs_sos50_1,trs_sos75_1,trs_eos90_1,trs_eos75_1,trs_eos50_1,trs_eos25_1,
+                 trs_sos25_2,trs_sos50_2,trs_sos75_2,trs_eos90_2,trs_eos75_2,trs_eos50_2,trs_eos25_2)
+  names(metrics) <- c("UD","prrD","SD","pop1","interminD","pop2","DD","psrD","RD")
+  names(metrics_part1)<-c("UD","pop1","interminD","pop2")
   names(metrics_part2)<-c("prrD","psrD")
   names(metrics_part3)<-c("SD","DD")
-  names(metrics_trs)<-c('trs_sos25','trs_sos50','trs_sos75',"trs_eos90",'trs_eos75','trs_eos50','trs_eos25')
-  allparas<-c("UD"=UD,"prrD"=prrD,"SD"=SD,"pop"=pop,"DD"=DD,"psrD"=psrD,"RD"=RD,
-              "trs_sos25"=trs_sos25,"trs_sos50"=trs_sos50,"trs_sos75"=trs_sos75,
-              "trs_eos25"=trs_eos25,"trs_eos50"=trs_eos50,"trs_eos75"=trs_eos75,"trs_eos90"=trs_eos90,
-              "maxline"=max_line,"baseline"=baseline,"ampl_sos"=ampl_sos,"ampl_eos"=ampl_eos,
+  names(metrics_trs)<-c('trs_sos25_1','trs_sos50_1','trs_sos75_1',"trs_eos90_1",'trs_eos75_1','trs_eos50_1','trs_eos25_1',
+                        'trs_sos25_2','trs_sos50_2','trs_sos75_2',"trs_eos90_2",'trs_eos75_2','trs_eos50_2','trs_eos25_2')
+  allparas<-c("UD"=UD,"prrD"=prrD,"SD"=SD,"pop1"=pop1,"interminD"=interminD,"pop2"=pop2,"DD"=DD,"psrD"=psrD,"RD"=RD,
+              "trs_sos25_1"=trs_sos25_1,"trs_sos50_1"=trs_sos50_1,"trs_sos75_1"=trs_sos75_1,
+              "trs_eos90_1"=trs_eos90_1,"trs_eos75_1"=trs_eos75_1,"trs_eos50_1"=trs_eos50_1,"trs_eos25_1"=trs_eos25_1,
+              "trs_sos25_2"=trs_sos25_2,"trs_sos50_2"=trs_sos50_2,"trs_sos75_2"=trs_sos75_2,
+              "trs_eos90_2"=trs_eos90_2,"trs_eos75_2"=trs_eos75_2,"trs_eos50_2"=trs_eos50_2,"trs_eos25_2"=trs_eos25_2,
+              "maxline1"=max_line1,"maxline2"=max_line2,"baseline"=baseline,"ampl1"=ampl1,"ampl2"=ampl2,
               "prr"= prr,"psr"=psr,"Gslope"=Gslope,"Dslope"=Dslope)
 
   #for data synthesis
@@ -361,10 +395,10 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
   Pheno_sum$pheno<-Pheno_metrics
 
   #for preparing the plots
-  all_ts<-data.frame(time=real_time,ts_ori=ts[,VI_name],ts_fit=ts_sm,ts=ts)
+  all_ts<-data.frame(time=real_time,ts_ori=data_ts[,paste0(VI_name,".max_gapf")],ts_fit=ts_sm,ts=ts)
   plot_paras<-list(b_prr=b_prr,prr=prr,b_psr=b_psr,psr=psr,SD=SD,DD=DD,SD=SD,DD=DD,baseline=baseline,
-                   max_line=max_line,
-                   trs_critrion_sos=trs_critrion_sos,trs_critrion_eos=trs_critrion_eos)
+                   max_line1=max_line1,max_line2=max_line2,
+                   trs_critrion1=trs_critrion1,trs_critrion2=trs_critrion2)
   plot_metrics<-list(metrics=metrics,metrics_part1=metrics_part1,metrics_part2=metrics_part2,metrics_part3=metrics_part3,
                      metrics_trs=metrics_trs,plot_paras=plot_paras)
   Pheno_result<-list(Pheno_sum=Pheno_sum,all_ts=all_ts,plot_metrics=plot_metrics)
@@ -383,9 +417,9 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
 # Pheno_results<-SplinePheno_extraction(data_ts,site.name,VI_name,FALSE,year)
 SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year){
   # Pheno_results<-Pheno_result
-  # site.name<-"ROS2"
-  # VI_name<-"GPP"
-  # Year<-2015
+  # site.name<-"NT"
+  # VI_name<-"GCC"
+  # Year<-2018
   # do_norm<-FALSE
   #
   #
@@ -394,8 +428,8 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
   deriValue<-diff(as.numeric(ts_sm))
   #add in Jan,2023
   doy=yday(Pheno_results$all_ts$time)
-  ts<-zoo(ts,order.by = doy)
-  ts_sm<-zoo(ts_sm,order.by = doy)
+  ts<-zoo(ts,order.by = c(1:length(ts)))
+  ts_sm<-zoo(ts_sm,order.by = c(1:length(ts)))
   #
   yname<-ifelse(do_norm==TRUE,"Norm-","")
 
@@ -414,28 +448,29 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
   ###########
   plot_metrics<-Pheno_results$plot_metrics
   ##adding the values:
-  plot_metrics$metrics<-plot_metrics$metrics+doy[1]-1
-  plot_metrics$metrics_part1<-plot_metrics$metrics_part1+doy[1]-1
-  plot_metrics$metrics_part2<-plot_metrics$metrics_part2+doy[1]-1
-  plot_metrics$metrics_part3<-plot_metrics$metrics_part3+doy[1]-1
-  plot_metrics$metrics_trs<-plot_metrics$metrics_trs+doy[1]-1
+  plot_metrics$metrics<-plot_metrics$metrics
+  plot_metrics$metrics_part1<-plot_metrics$metrics_part1
+  plot_metrics$metrics_part2<-plot_metrics$metrics_part2
+  plot_metrics$metrics_part3<-plot_metrics$metrics_part3
+  plot_metrics$metrics_trs<-plot_metrics$metrics_trs
   #
-  b_prr<-plot_metrics$plot_paras$b_prr+doy[1]-1;prr<-plot_metrics$plot_paras$prr
-  b_psr<-plot_metrics$plot_paras$b_psr+doy[1]-1;psr<-plot_metrics$plot_paras$psr
-  SD<-plot_metrics$plot_paras$SD+doy[1]-1;DD<-plot_metrics$plot_paras$DD1+doy[1]-1
-  baseline<-plot_metrics$plot_paras$baseline;max_line<-plot_metrics$plot_paras$max_line
-  trs_critrion_sos<-plot_metrics$plot_paras$trs_critrion_sos+doy[1]-1
-  trs_critrion_eos<-plot_metrics$plot_paras$trs_critrion_eos+doy[1]-1
+  b_prr<-plot_metrics$plot_paras$b_prr;prr<-plot_metrics$plot_paras$prr
+  b_psr<-plot_metrics$plot_paras$b_psr;psr<-plot_metrics$plot_paras$psr
+  SD<-plot_metrics$plot_paras$SD;DD<-plot_metrics$plot_paras$DD1
+  baseline<-plot_metrics$plot_paras$baseline;
+  max_line1<-plot_metrics$plot_paras$max_line1; max_line2<-plot_metrics$plot_paras$max_line2
+  trs_critrion1<-plot_metrics$plot_paras$trs_critrion1
+  trs_critrion2<-plot_metrics$plot_paras$trs_critrion2
 
   par(mfrow=c(2,1))
   ##plot1
-  plot(ts,xlab=paste0(site.name,'_Spline_',Year),ylab=paste0(yname,VI_name),main=paste('phenophase-estimate'),xaxt='n',type = 'p')
+  plot(ts,xlab=paste0(site.name,'_Spline_',Year,"(Hydro-year)"),ylab=paste0(yname,VI_name),main=paste('phenophase-estimate'),xaxt='n',type = 'p')
   points(ts_sm,col='red')
-  axis(1,at=c(0,30,61,91,122,153,181,212,242,273,303,334,365),labels=c("Jan",
-  "Feb","Mar","Apr","May","Jun","Jul","Aug",'Sep',"Oct","Nov","Dec","Jan"))
+  axis(1,at=c(0,30,61,91,122,153,181,212,242,273,303,334,365),labels=c('Sep',"Oct","Nov","Dec","Jan",
+  "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"))
   #colors <- palette()[2:5]
-  colors<-c('lightgreen','blue','cyan','red','cyan','blue','orange')
-  colors1<-c('lightgreen','red')
+  colors<-c('lightgreen','blue','cyan','red',"red","red",'cyan','blue','orange')
+  colors1<-c('lightgreen','red',"red","red")
   colors2<-c('blue','blue')
   colors3<-c('cyan','cyan')
   ylons1 <- c(min(abs(ts_sm), na.rm = TRUE) * 1.01)
@@ -451,22 +486,25 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
   if(!is.na(b_psr)){
     abline(a=b_psr,b=psr,col='blue',lty=2,lwd='2.5')
   }
-  abline(h=c(baseline,max_line),col='green',lty= 2,lwd='2.5')
+  abline(h=c(baseline,max_line1,max_line2),col='green',lty= 2,lwd='2.5')
+  #add trs_critrion1 and trs_critrion2
+  abline(h=c(trs_critrion1,trs_critrion2),col='blue',lty= 2,lwd='1.5')
 
   ##plot2
-  plot(ts,xlab=paste0(site.name,'_Spline_',Year),ylab=paste0(yname,VI_name),
+  plot(ts,xlab=paste0(site.name,'_Spline_',Year,"(Hydro-year)"),ylab=paste0(yname,VI_name),
        main=paste('phenophase-estimate'),xaxt='n',type = 'p')
   points(ts_sm,col='red')
-  axis(1,at=c(0,30,61,91,122,153,181,212,242,273,303,334,365),labels=c("Jan",
-     "Feb","Mar","Apr","May","Jun","Jul","Aug",'Sep',"Oct","Nov","Dec","Jan"))
-  colors<-c('lightgreen','blue','cyan','red','cyan','blue','orange')
+  axis(1,at=c(0,30,61,91,122,153,181,212,242,273,303,334,365),labels=c('Sep',"Oct","Nov","Dec","Jan",
+       "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"))
+  colors<-c('lightgreen','blue','cyan','red',"red","red",'cyan','blue','orange')
   colors1<-c('blue','blue','blue','blue','blue','blue')
   ylons <- c(min(ts_sm, na.rm = T) * 1.01)
-  ylons1 <- c(min(ts_sm, na.rm = T) *2)
+  ylons1 <- c(min(ts_sm, na.rm = T) *1.1)
   abline(v = plot_metrics$metrics, col = colors)
   text(plot_metrics$metrics, y = ylons, labels = names(plot_metrics$metrics),col = colors,cex=0.75)
   abline(v=plot_metrics$metrics_trs,col=colors1)
-  text(plot_metrics$metrics_trs, y = ylons1, labels = substr(names(plot_metrics$metrics_trs),5,9),col = colors1,cex=0.75)
+  text(plot_metrics$metrics_trs, y = ylons1,
+       labels = substr(names(plot_metrics$metrics_trs),5,11),col = colors1,cex=0.75)
 }
 
 #plotting:
