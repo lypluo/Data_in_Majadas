@@ -45,9 +45,9 @@ prod.ad1<-function(deri)
   return(Nr)
 }
 
-SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
+SplinePheno_extraction_incom<-function(data_ts,sitename,VI_name,do_norm,year_num){
   # data_ts<-df.run
-  # sitename<-"NT"
+  # sitename<-"CT"
   # VI_name<-"GCC"
   # do_norm<-FALSE
   # year_num<-2016
@@ -147,19 +147,21 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     #-----------
     baseline<- min(ts_sm, na.rm = T)
     ##define the interminD in the winter(Dec-Feb)
+    #!calculate time_gap to better extract the PTDs-->add Jan, 2023
+    time_gap<-as.numeric(as.Date(real_time[1])-as.Date(paste0(year_num-1,"-09-01")))
     ##-->extend the range 15 days before Jan and 15 days after the Feb
     extendD<-15
-    intermin<-min(ts_sm[DateT1[(DateT1>122-extendD)&(DateT1<=181+extendD)]])
+    #adjust interminD extractxion-->add Jan,2023:
+    intermin<-min(ts_sm[DateT1[(DateT1>122-time_gap-extendD)&(DateT1<=181-time_gap+extendD)]])
     interminD<-match(intermin,ts_sm)
     if(is.na(interminD)){
-      intermin<-min(Ppredict[c(122+15):181])      #define between Jan-15 to end of Feb
+      intermin<-min(Ppredict[c(122-time_gap+15):181-time_gap])      #define between Jan-15 to end of Feb
       interminD<-match(intermin,Ppredict)
     }
     # if(year_num==2017){
     #   intermin<-min(ts_sm[DateT1[(DateT1>=153-extendD)&(DateT1<=181)]]) #define between Feb to Mar
     #   interminD<-match(intermin,ts_sm)
     # }
-
     abline(v=interminD,col='blue',lty=2)
 
     #-----------
@@ -174,8 +176,8 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     abline(v=c(pop1,pop2))
 
     ##Determine trs_sos&eos
-    mn1<-min(ts_sm[1:180],na.rm=T)
-    mn2<-min(ts_sm[181:365],na.rm = T)
+    mn1<-NA #mn1<-min(ts_sm[1:180],na.rm=T)
+    mn2<-min(ts_sm[c(181-time_gap):c(365-time_gap)],na.rm = T)
     ampl1<-max_line1-mn1
     ampl2<-max_line2-mn2
     ampl_full<-max(c(max_line1,max_line2),na.rm=T)-min(c(mn1,mn2),na.rm = T)
@@ -185,20 +187,20 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     abline(h=trs_critrion1,col='blue',lty=2)
     abline(h=trs_critrion2,col='blue',lty=2)
     #
-    trs_sos50_1<-30+which.min(as.numeric(abs(trs_critrion1 - ts_sm[30:pop1])))-1
-    trs_eos50_1<-pop1+which.min(as.numeric(abs(trs_critrion1-ts_sm[pop1:interminD])))-1
+    trs_sos50_1<-NA #trs_sos50_1<-30+which.min(as.numeric(abs(trs_critrion1 - ts_sm[30:pop1])))-1
+    trs_eos50<-NA #trs_eos50_1<-pop1+which.min(as.numeric(abs(trs_critrion1-ts_sm[pop1:interminD])))-1
     trs_sos50_2<-interminD+which.min(as.numeric(abs(trs_critrion2-ts_sm[interminD:pop2])))-1
     trs_eos50_2<-pop2+which.min(as.numeric(abs(trs_critrion2 - ts_sm[pop2:length(ts_sm)])))-1
 
     #set a crition to filter the pseduo trs50
     #if the minimum residual between trs_critrion and trs_sm bigger than
     #0.1*ampl, then set the trs50<-NA
-    if(min(as.numeric(abs(trs_critrion1 - ts_sm[30:pop1])))>c(ampl1*0.05)){
-      trs_sos50_1<-NA
-    }
-    if(min(as.numeric(abs(trs_critrion1 - ts_sm[pop1:interminD])))>c(ampl1*0.05)){
-      trs_eos50_1<-NA
-    }
+    # if(min(as.numeric(abs(trs_critrion1 - ts_sm[30:pop1])))>c(ampl1*0.05)){
+    #   trs_sos50_1<-NA
+    # }
+    # if(min(as.numeric(abs(trs_critrion1 - ts_sm[pop1:interminD])))>c(ampl1*0.05)){
+    #   trs_eos50_1<-NA
+    # }
     if(min(as.numeric(abs(trs_critrion2 - ts_sm[interminD:pop2])))>c(ampl2*0.05)){
       trs_sos50_2<-NA
     }
@@ -211,15 +213,15 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     ifelse(exists('trs_sos50_2')==FALSE,trs_sos50_2<-NA,trs_sos50_2<-trs_sos50_2)
     abline(v=c(trs_sos50_1,trs_eos50_1,trs_sos50_2,trs_eos50_2),col='blue')
     #add four more threshold-based PTDs
-    trs_sos25_value<-mn1+0.25*ampl1 #green-up period
-    trs_sos75_value<-mn1+0.75*ampl1
+    trs_sos25_value<-NA #trs_sos25_value<-mn1+0.25*ampl1 #green-up period
+    trs_sos75_value<-NA #trs_sos75_value<-mn1+0.75*ampl1
     trs_eos25_value<-mn2+0.25*ampl2 #dry-down period
     trs_eos75_value<-mn2+0.75*ampl2
 
-    trs_sos25_1<-15+which.min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))
-    trs_sos75_1<-15+which.min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))
-    trs_eos75_1<-pop1+which.min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))
-    trs_eos25_1<-pop1+which.min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))
+    trs_sos25_1<-NA #trs_sos25_1<-15+which.min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))
+    trs_sos75_1<-NA #trs_sos75_1<-15+which.min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))
+    trs_eos75_1<-NA #trs_eos75_1<-pop1+which.min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))
+    trs_eos25_1<-NA #trs_eos25_1<-pop1+which.min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))
 
     trs_sos25_2<-interminD+which.min(as.numeric(abs(trs_eos25_value - ts_sm[interminD:pop2])))
     trs_sos75_2<-interminD+which.min(as.numeric(abs(trs_eos75_value - ts_sm[interminD:pop2])))
@@ -234,18 +236,18 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     ##Jan, 2023:add a limiting factor to better extrat the trs_sos25_1 and trs_eos25_2
     #-->using the trs_sos50_1 and trs_eos50_2 to better define their extration ranges
     #the difference between trs_sos50_1 and trs_sos25_1 cannot exceed 45day(1.5 months)
-    if(min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))>c(ampl1*0.05)|c(trs_sos50_1-trs_sos25_1)>45){
-      trs_sos25_1<-NA
-    }
-    if(min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))>c(ampl1*0.05)){
-      trs_sos75_1<-NA
-    }
-    if(min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))>c(ampl2*0.1)){
-      trs_eos75_1<-NA
-    }
-    if(min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))>c(ampl2*0.1)){
-      trs_eos25_1<-NA
-    }
+    # if(min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))>c(ampl1*0.05)|c(trs_sos50_1-trs_sos25_1)>45){
+    #   trs_sos25_1<-NA
+    # }
+    # if(min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))>c(ampl1*0.05)){
+    #   trs_sos75_1<-NA
+    # }
+    # if(min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))>c(ampl2*0.1)){
+    #   trs_eos75_1<-NA
+    # }
+    # if(min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))>c(ampl2*0.1)){
+    #   trs_eos25_1<-NA
+    # }
 
 
     if(min(as.numeric(abs(trs_eos25_value - ts_sm[interminD:pop2])))>c(ampl2*0.05)){
@@ -267,12 +269,12 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     #add EOS 90-->add in 2022-Feb,20
     trs_sos90_value<-mn1+0.9*ampl1
     trs_eos90_value<-mn2+0.9*ampl2
-    trs_eos90_1<-pop1+which.min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))-1
+    trs_eos90_1<-NA #trs_eos90_1<-pop1+which.min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))-1
     trs_eos90_2<-pop2+which.min(as.numeric(abs(trs_eos90_value - ts_sm[pop2:length(ts_sm)])))-1
 
-    if(min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))>c(ampl1*0.1)){
-      trs_eos90_1<-NA
-    }
+    # if(min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))>c(ampl1*0.1)){
+    #   trs_eos90_1<-NA
+    # }
     if(min(as.numeric(abs(trs_eos90_value - ts_sm[pop2:length(ts_sm)])))>c(ampl2*0.1)){
       trs_eos90_2<-NA
     }
@@ -359,6 +361,8 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
                           prr,psr,Gslope,Dslope)
   }
   Pheno_metrics<-as.data.frame(t(Pheno_metrics))
+  ##adjust the Phenos -->add the time_gap
+  Pheno_metrics[1:23]<-Pheno_metrics[1:23]+time_gap
   names(Pheno_metrics)<-c("UD","prrD","SD","pop1","interminD","pop2","DD","psrD","RD",
                           'trs_sos25_1','trs_sos50_1','trs_sos75_1',"trs_eos90_1",'trs_eos75_1','trs_eos50_1','trs_eos25_1',
                           'trs_sos25_2','trs_sos50_2','trs_sos75_2',"trs_eos90_2",'trs_eos75_2','trs_eos50_2','trs_eos25_2',
@@ -419,11 +423,11 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
 # do_norm<-FALSE
 # year_num<-2000
 # Pheno_results<-SplinePheno_extraction(data_ts,site.name,VI_name,FALSE,year)
-SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year){
-  # Pheno_results<-Pheno_result
-  # site.name<-"NT"
+SplinePheno_metrics_plot_incom<-function(Pheno_results,site.name,VI_name,do_norm,Year){
+  # Pheno_results<-df.Phenos
+  # site.name<-"CT"
   # VI_name<-"GCC"
-  # Year<-2018
+  # Year<-2016
   # do_norm<-FALSE
   #
   #
@@ -436,6 +440,9 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
   ts_sm<-zoo(ts_sm,order.by = c(1:length(ts)))
   #
   yname<-ifelse(do_norm==TRUE,"Norm-","")
+  #
+  real_time<-Pheno_results$all_ts$time
+  time_gap<-as.numeric(as.Date(real_time[1])-as.Date(paste0(Year-1,"-09-01")))
 
   #(1)plot1:  gcc time series and its first derivitives
   # par(mfrow=c(2,1))
@@ -452,15 +459,15 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
   ###########
   plot_metrics<-Pheno_results$plot_metrics
   ##adding the values:
-  plot_metrics$metrics<-plot_metrics$metrics
-  plot_metrics$metrics_part1<-plot_metrics$metrics_part1
-  plot_metrics$metrics_part2<-plot_metrics$metrics_part2
-  plot_metrics$metrics_part3<-plot_metrics$metrics_part3
-  plot_metrics$metrics_trs<-plot_metrics$metrics_trs
+  plot_metrics$metrics<-plot_metrics$metrics+time_gap
+  plot_metrics$metrics_part1<-plot_metrics$metrics_part1+time_gap
+  plot_metrics$metrics_part2<-plot_metrics$metrics_part2+time_gap
+  plot_metrics$metrics_part3<-plot_metrics$metrics_part3+time_gap
+  plot_metrics$metrics_trs<-plot_metrics$metrics_trs+time_gap
   #
-  b_prr<-plot_metrics$plot_paras$b_prr;prr<-plot_metrics$plot_paras$prr
-  b_psr<-plot_metrics$plot_paras$b_psr;psr<-plot_metrics$plot_paras$psr
-  SD<-plot_metrics$plot_paras$SD;DD<-plot_metrics$plot_paras$DD
+  prr<-plot_metrics$plot_paras$prr;b_prr<-plot_metrics$plot_paras$b_prr-time_gap*prr
+  psr<-plot_metrics$plot_paras$psr;b_psr<-plot_metrics$plot_paras$b_psr-time_gap*psr
+  SD<-plot_metrics$plot_paras$SD+time_gap;DD<-plot_metrics$plot_paras$DD+time_gap
   baseline<-plot_metrics$plot_paras$baseline;
   max_line1<-plot_metrics$plot_paras$max_line1; max_line2<-plot_metrics$plot_paras$max_line2
   trs_critrion1<-plot_metrics$plot_paras$trs_critrion1
@@ -468,8 +475,9 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
 
   par(mfrow=c(2,1))
   ##plot1
-  plot(ts,xlab=paste0(site.name,'_Spline_',Year,"(Hydro-year)"),ylab=paste0(yname,VI_name),main=paste('phenophase-estimate'),xaxt='n',type = 'p')
-  points(ts_sm,col='red')
+  ts_addNA<-c(rep(NA,time_gap),as.numeric(ts)) #add in Jan,2023
+  plot(ts_addNA,xlab=paste0(site.name,'_Spline_',Year,"(Hydro-year)"),ylab=paste0(yname,VI_name),main=paste('phenophase-estimate'),xaxt='n',type = 'p')
+  points(c(rep(NA,time_gap),ts_sm),col='red')
   axis(1,at=c(0,30,61,91,122,153,181,212,242,273,303,334,365),labels=c('Sep',"Oct","Nov","Dec","Jan",
   "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"))
   #colors <- palette()[2:5]
@@ -495,9 +503,9 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
   abline(h=c(trs_critrion1,trs_critrion2),col='blue',lty= 2,lwd='1.5')
 
   ##plot2
-  plot(ts,xlab=paste0(site.name,'_Spline_',Year,"(Hydro-year)"),ylab=paste0(yname,VI_name),
+  plot(ts_addNA,xlab=paste0(site.name,'_Spline_',Year,"(Hydro-year)"),ylab=paste0(yname,VI_name),
        main=paste('phenophase-estimate'),xaxt='n',type = 'p')
-  points(ts_sm,col='red')
+  points(c(rep(NA,time_gap),ts_sm),col='red')
   axis(1,at=c(0,30,61,91,122,153,181,212,242,273,303,334,365),labels=c('Sep',"Oct","Nov","Dec","Jan",
        "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"))
   colors<-c('lightgreen','blue','cyan','red',"red","red",'cyan','blue','orange')
@@ -512,4 +520,4 @@ SplinePheno_metrics_plot<-function(Pheno_results,site.name,VI_name,do_norm,Year)
 }
 
 #plotting:
-# SplinePheno_metrics_plot(Pheno_results,site.name,"EVI",year)
+# SplinePheno_metrics_plot_incom(Pheno_result,"CT","GCC",FALSE,2016)

@@ -16,6 +16,22 @@ NEco_VIs<-temp;rm(temp)
 load(paste0(load.path,"S_Eco.RDA"))
 SEco_VIs<-temp;rm(temp)
 
+##calibrate the data(Jan,2023):
+#a.North tower (NT) data in 2020-->set the data after July,1 equals to data in July,1
+t1<-NEco_VIs[NEco_VIs$Date>as.POSIXct("2019-01-01"),]
+plot(t1$Date,t1$GCC.max_gapf)
+abline(v=as.POSIXct("2020-07-01"))
+#adjust the GCC data after 2020-07-01
+pos<-match(as.Date("2020-07-01"),as.Date(NEco_VIs$Date))
+GCC_sub<-NEco_VIs$GCC.max_gapf[pos]
+NEco_VIs<-NEco_VIs %>%
+  mutate(GCC.max_gapf = ifelse(Date>as.POSIXct("2020-07-01"),GCC_sub,GCC.max_gapf))
+
+#b.Main tower (CT) data in H2016:
+t2<-MEco_VIs[MEco_VIs$Date<as.POSIXct("2016-12-31"),]
+plot(t2$Date,t2$GCC.max_gapf)
+#in CT, the data before 2015-12 are missing-->keep the data like this
+
 #-----------------
 #(2)merge the calendar year data
 #-----------------
