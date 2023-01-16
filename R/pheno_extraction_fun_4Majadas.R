@@ -50,7 +50,7 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
   # sitename<-"NT"
   # VI_name<-"GCC"
   # do_norm<-FALSE
-  # year_num<-2016
+  # year_num<-2018
 
   #
   proc.ts<-data_ts %>%
@@ -155,10 +155,6 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
       intermin<-min(Ppredict[c(122+15):181])      #define between Jan-15 to end of Feb
       interminD<-match(intermin,Ppredict)
     }
-    # if(year_num==2017){
-    #   intermin<-min(ts_sm[DateT1[(DateT1>=153-extendD)&(DateT1<=181)]]) #define between Feb to Mar
-    #   interminD<-match(intermin,ts_sm)
-    # }
 
     abline(v=interminD,col='blue',lty=2)
 
@@ -189,6 +185,42 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     trs_eos50_1<-pop1+which.min(as.numeric(abs(trs_critrion1-ts_sm[pop1:interminD])))-1
     trs_sos50_2<-interminD+which.min(as.numeric(abs(trs_critrion2-ts_sm[interminD:pop2])))-1
     trs_eos50_2<-pop2+which.min(as.numeric(abs(trs_critrion2 - ts_sm[pop2:length(ts_sm)])))-1
+    ##adjustment for sos50_2:
+    if(year_num==2020 & sitename=="NPT" & VI_name=="GCC"){
+      #restrict the green-up in spring occurs from March
+      trs_sos50_2<-181+which.min(as.numeric(abs(trs_critrion2 - ts_sm[181:pop2])))-1 #adjust for NPT
+    }
+
+    #!!add in Jan,2013-->as trs_sos50_1 and trs_eos50_2 are very important-->add some adjustments to
+    #make the extraction robust-->basic concept: for sos50_1-->minium difference + deriveriate>0
+    #for eos50_2-->minimum difference +deriverate<0
+    #for sos50_1
+    data_sos<-as.numeric(abs(trs_critrion1 - ts_sm[30:pop1]))
+    potential_min_value<-sort(data_sos,decreasing = F)[1:5]
+    pos_value<-match(potential_min_value,data_sos)+30-1
+    for(i in 1:5){
+      if(deri_temp[pos_value[i]-1]>0)
+      {
+        trs_sos50_1<-pos_value[i]
+        break
+      }
+      else
+      {next}
+    }
+
+    #for eos50_2
+    data_eos<-as.numeric(abs(trs_critrion2 - ts_sm[pop2:length(ts_sm)]))
+    potential_min_value<-sort(data_eos,decreasing = F)[1:5]
+    pos_value<-match(potential_min_value,data_eos)+pop2-1
+    for(i in 1:5){
+      if(deri_temp[pos_value[i]-1]<0)
+      {
+        trs_eos50_2<-pos_value[i]
+        break
+      }
+      else
+      {next}
+    }
 
     #set a crition to filter the pseduo trs50
     #if the minimum residual between trs_critrion and trs_sm bigger than
@@ -220,21 +252,31 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     trs_sos75_1<-15+which.min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))
     trs_eos75_1<-pop1+which.min(as.numeric(abs(trs_sos75_value - ts_sm[pop1:interminD])))
     trs_eos25_1<-pop1+which.min(as.numeric(abs(trs_sos25_value - ts_sm[pop1:interminD])))
+    ##adjustment:
+    if(year_num==2018 & VI_name=="GCC"){
+      trs_sos25_1<-30+which.min(as.numeric(abs(trs_sos25_value - ts_sm[30:pop1])))-1 #adjust for NT
+    }
+
 
     trs_sos25_2<-interminD+which.min(as.numeric(abs(trs_eos25_value - ts_sm[interminD:pop2])))
     trs_sos75_2<-interminD+which.min(as.numeric(abs(trs_eos75_value - ts_sm[interminD:pop2])))
     trs_eos75_2<-pop2+which.min(as.numeric(abs(trs_eos75_value - ts_sm[pop2:length(ts_sm)])))-1
     trs_eos25_2<-pop2+which.min(as.numeric(abs(trs_eos25_value - ts_sm[pop2:length(ts_sm)])))-1
-
+    ##adjustment:
+    if(year_num==2017 & VI_name=="GCC"){
+      trs_eos75_2<-pop2+which.min(as.numeric(abs(trs_eos75_value - ts_sm[pop2:230])))-1 #adjust for NT
+    }
+    if(year_num==2020 & VI_name=="GCC"){
+      #restrict the green-up in spring occurs from March
+      trs_sos75_2<-181+which.min(as.numeric(abs(trs_eos75_value - ts_sm[181:pop2])))-1 #adjust for NPT
+    }
     #set a crition to filter the pseduo trs25,trs75
     #if the minimum residual between trs_critrion and trs_sm bigger than
     #0.1*ampl, then set the trs50<-NA
     abline(h=c(trs_sos25_value,trs_sos75_value),col='steelblue2',lty=2) #green-up
     abline(h=c(trs_eos75_value,trs_eos25_value),col='blue',lty=1) #dry-down
-    ##Jan, 2023:add a limiting factor to better extrat the trs_sos25_1 and trs_eos25_2
-    #-->using the trs_sos50_1 and trs_eos50_2 to better define their extration ranges
-    #the difference between trs_sos50_1 and trs_sos25_1 cannot exceed 45day(1.5 months)
-    if(min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))>c(ampl1*0.05)|c(trs_sos50_1-trs_sos25_1)>45){
+    #
+    if(min(as.numeric(abs(trs_sos25_value - ts_sm[15:pop1])))>c(ampl1*0.05)){
       trs_sos25_1<-NA
     }
     if(min(as.numeric(abs(trs_sos75_value - ts_sm[15:pop1])))>c(ampl1*0.05)){
@@ -263,6 +305,7 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     }
     abline(v=c(trs_sos25_1,trs_sos75_1,trs_eos75_1,trs_eos25_1,
                trs_sos25_2,trs_sos75_2,trs_eos75_2,trs_eos25_2),col='gold')
+    #
 
     #add EOS 90-->add in 2022-Feb,20
     trs_sos90_value<-mn1+0.9*ampl1
@@ -270,6 +313,12 @@ SplinePheno_extraction<-function(data_ts,sitename,VI_name,do_norm,year_num){
     trs_eos90_1<-pop1+which.min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))-1
     trs_eos90_2<-pop2+which.min(as.numeric(abs(trs_eos90_value - ts_sm[pop2:length(ts_sm)])))-1
 
+    ##adjustment:
+    if(year_num==2017 & VI_name=="GCC"){
+      trs_eos90_2<-pop2+which.min(as.numeric(abs(trs_eos90_value - ts_sm[pop2:230])))-1 #adjust for NT
+    }
+
+    #
     if(min(as.numeric(abs(trs_sos90_value - ts_sm[pop1:interminD])))>c(ampl1*0.1)){
       trs_eos90_1<-NA
     }

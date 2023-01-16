@@ -14,8 +14,8 @@ load(file = paste0(load.path,"Hydro_Eco_PhenoCam_VIs.RDA"))
 #-----------------
 extract_PTDs_fun<-function(df,treatment,Hydroyear_extract){
   # df<-Hydro_Eco_PhenoCam_VIs
-  # treatment<-"CT"
-  # Hydroyear_extract<-"H2016"
+  # treatment<-"NT"
+  # Hydroyear_extract<-"H2018"
 
   #
   df.run<-df %>%
@@ -52,9 +52,9 @@ extract_PTDs_fun<-function(df,treatment,Hydroyear_extract){
 df.Pheno.NT_2015<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2015")
 df.Pheno.NT_2016<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2016")
 df.Pheno.NT_2017<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2017")
-df.Pheno.NT_2018<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2018") #need to check
+df.Pheno.NT_2018<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2018")
 df.Pheno.NT_2019<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2019")
-df.Pheno.NT_2020<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2020") #need to figure!
+df.Pheno.NT_2020<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NT","H2020")
 #
 df.Pheno.NT_all<-list(df.Pheno.NT_2015,df.Pheno.NT_2016,df.Pheno.NT_2017,
                       df.Pheno.NT_2018,df.Pheno.NT_2019,df.Pheno.NT_2020)
@@ -65,7 +65,7 @@ df.Pheno.NPT_2016<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NPT","H2016")
 df.Pheno.NPT_2017<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NPT","H2017")
 df.Pheno.NPT_2018<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NPT","H2018")
 df.Pheno.NPT_2019<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NPT","H2019")
-df.Pheno.NPT_2020<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NPT","H2020") #need to figure!
+df.Pheno.NPT_2020<-extract_PTDs_fun(Hydro_Eco_PhenoCam_VIs,"NPT","H2020")
 #
 df.Pheno.NPT_all<-list(df.Pheno.NPT_2015,df.Pheno.NPT_2016,df.Pheno.NPT_2017,
                       df.Pheno.NPT_2018,df.Pheno.NPT_2019,df.Pheno.NPT_2020)
@@ -124,7 +124,7 @@ HydroY_to_CalY<-function(df,Hyear){
   #
   df_Caldoy<-yday(as.Date(t(df_CalDate[,1:c(length(df)-1)])));df_Caldoy[length(df)]<-Hyear
   df_Caldoy<-as.data.frame(t(as.data.frame(df_Caldoy)))
-  names(df_CalDate)<-names(df)
+  names(df_Caldoy)<-names(df)
   #
   df_out<-list(df_CalDate,df_Caldoy)
   return(df_out)
@@ -147,7 +147,14 @@ for (i in 1:nrow(df.sel)) {
     df_pheno_doy<-rbind(df_pheno_doy,df.temp[[2]])
   }
 }
+#also adding other phenological metrics:
+df_pheno_date<-cbind(df_pheno_date,df.Phenos_tidy[,-c(1:23,33)])
+df_pheno_doy<-cbind(df_pheno_doy,df.Phenos_tidy[,-c(1:23,33)])
+
 #
 save.path<-"./data/phenocam_VIs_forRichard/extracted_phenos/"
 save(df_pheno_date,file=paste0(save.path,"df.phenos_date.RDA"))
 save(df_pheno_doy,file=paste0(save.path,"df.phenos_doy.RDA"))
+##save csv files for Richard:
+write.csv(df_pheno_date,file=paste0(save.path,"df.phenos_date.csv"))
+write.csv(df_pheno_doy,file=paste0(save.path,"df.phenos_doy.csv"))
