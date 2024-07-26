@@ -188,7 +188,7 @@ SplinePheno_extraction_incom<-function(data_ts,sitename,VI_name,do_norm,year_num
     abline(h=trs_critrion2,col='blue',lty=2)
     #
     trs_sos50_1<-NA #trs_sos50_1<-30+which.min(as.numeric(abs(trs_critrion1 - ts_sm[30:pop1])))-1
-    trs_eos50<-NA #trs_eos50_1<-pop1+which.min(as.numeric(abs(trs_critrion1-ts_sm[pop1:interminD])))-1
+    trs_eos50_1<-NA #trs_eos50_1<-pop1+which.min(as.numeric(abs(trs_critrion1-ts_sm[pop1:interminD])))-1
     trs_sos50_2<-interminD+which.min(as.numeric(abs(trs_critrion2-ts_sm[interminD:pop2])))-1
     trs_eos50_2<-pop2+which.min(as.numeric(abs(trs_critrion2 - ts_sm[pop2:length(ts_sm)])))-1
 
